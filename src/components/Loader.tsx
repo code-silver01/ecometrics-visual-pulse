@@ -8,7 +8,7 @@ interface LoaderProps {
 
 const Loader = ({ onComplete }: LoaderProps) => {
   const [count, setCount] = useState(0);
-  const [isVertical, setIsVertical] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const [fadeOut, setFadeOut] = useState(false);
 
   useEffect(() => {
@@ -19,87 +19,129 @@ const Loader = ({ onComplete }: LoaderProps) => {
         }
         return prev;
       });
-    }, 30);
+    }, 50);
 
     return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
     if (count === 100) {
-      setTimeout(() => setIsVertical(true), 200);
-      setTimeout(() => setFadeOut(true), 1200);
-      setTimeout(() => onComplete(), 1800);
+      setTimeout(() => setIsTransitioning(true), 300);
+      setTimeout(() => setFadeOut(true), 1500);
+      setTimeout(() => onComplete(), 2000);
     }
   }, [count, onComplete]);
 
   return (
-    <div className={`fixed inset-0 bg-gradient-to-br from-emerald-900 via-green-800 to-teal-900 flex items-center justify-center z-50 transition-opacity duration-500 ${fadeOut ? 'opacity-0' : 'opacity-100'}`}>
-      {/* Animated particles */}
+    <div className={`fixed inset-0 bg-gradient-to-br from-emerald-900 via-green-800 to-teal-900 flex items-center justify-center z-50 transition-opacity duration-1000 ${fadeOut ? 'opacity-0' : 'opacity-100'}`}>
+      {/* Animated background particles */}
       <div className="absolute inset-0 overflow-hidden">
-        {[...Array(20)].map((_, i) => (
+        {[...Array(30)].map((_, i) => (
           <div
             key={i}
-            className="absolute w-2 h-2 bg-emerald-400 rounded-full animate-pulse opacity-30"
+            className="absolute w-1 h-1 bg-emerald-300 rounded-full animate-pulse"
             style={{
               left: `${Math.random() * 100}%`,
               top: `${Math.random() * 100}%`,
-              animationDelay: `${Math.random() * 2}s`,
-              animationDuration: `${2 + Math.random() * 2}s`
+              animationDelay: `${Math.random() * 3}s`,
+              animationDuration: `${1 + Math.random() * 2}s`,
+              opacity: Math.random() * 0.7 + 0.3
             }}
           />
         ))}
       </div>
 
-      <div className="relative w-full max-w-4xl px-8">
+      <div className="relative w-full max-w-6xl px-8">
         {/* Counter */}
-        <div className="absolute top-0 left-0 text-white text-8xl font-bold mb-8 animate-pulse">
-          {count}
+        <div className="absolute -top-16 left-0">
+          <div className="text-white text-7xl md:text-9xl font-bold animate-pulse">
+            {count}
+          </div>
         </div>
         
         {/* Progress Bar Container */}
-        <div className="mt-32 relative flex items-center justify-center">
-          <div 
-            className={`bg-white/20 rounded-full transition-all duration-700 ease-in-out ${
-              isVertical 
-                ? 'w-4 h-64 transform rotate-90 origin-left' 
-                : 'w-full max-w-2xl h-4'
-            }`}
-          >
-            {/* Progress Fill */}
+        <div className="mt-20 relative flex items-center justify-center">
+          <div className="relative w-full max-w-4xl">
+            {/* Horizontal Progress Bar */}
             <div 
-              className={`bg-gradient-to-r from-emerald-400 to-green-300 rounded-full transition-all duration-100 ease-linear relative ${
-                isVertical ? 'w-full h-full' : 'h-full'
+              className={`bg-emerald-900/40 backdrop-blur-sm rounded-full transition-all duration-1000 ease-in-out ${
+                isTransitioning 
+                  ? 'opacity-0 transform scale-95' 
+                  : 'opacity-100 w-full h-6'
               }`}
-              style={{ width: isVertical ? '100%' : `${count}%` }}
             >
-              {/* Moving Leaf */}
-              {!isVertical && (
+              {/* Progress Fill */}
+              <div 
+                className="bg-gradient-to-r from-emerald-400 via-green-300 to-emerald-200 h-full rounded-full transition-all duration-100 ease-out relative overflow-hidden"
+                style={{ width: `${count}%` }}
+              >
+                {/* Shimmer effect */}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse" />
+                
+                {/* Moving Leaf */}
                 <div 
-                  className="absolute right-0 top-1/2 transform -translate-y-1/2 translate-x-2"
-                  style={{ 
-                    transform: `translateY(-50%) translateX(8px) ${count > 5 ? 'scale(1.2)' : 'scale(1)'}`,
-                    transition: 'transform 0.1s ease-out'
-                  }}
+                  className="absolute right-0 top-1/2 transform -translate-y-1/2 translate-x-2 transition-all duration-100"
                 >
-                  <Leaf 
-                    className="text-emerald-300 animate-bounce" 
-                    size={20}
-                    style={{
-                      filter: 'drop-shadow(0 0 10px rgba(16, 185, 129, 0.5))',
-                      animationDuration: '0.8s'
-                    }}
-                  />
+                  <div className="relative">
+                    <Leaf 
+                      className="text-emerald-600 drop-shadow-lg" 
+                      size={28}
+                      style={{
+                        filter: 'drop-shadow(0 0 8px rgba(16, 185, 129, 0.6))',
+                        transform: `rotate(${count * 3.6}deg) scale(${1 + (count / 200)})`
+                      }}
+                    />
+                    {/* Leaf trail effect */}
+                    <div className="absolute inset-0 animate-ping">
+                      <Leaf 
+                        className="text-emerald-300 opacity-40" 
+                        size={28}
+                      />
+                    </div>
+                  </div>
                 </div>
-              )}
+              </div>
             </div>
+
+            {/* L-shaped Vertical Bar (appears after horizontal completes) */}
+            {isTransitioning && (
+              <div 
+                className="absolute -right-3 -top-32 w-6 bg-gradient-to-b from-emerald-400 to-green-300 rounded-full animate-slide-in-right shadow-lg"
+                style={{ 
+                  height: '200px',
+                  animationDuration: '800ms',
+                  boxShadow: '0 0 20px rgba(16, 185, 129, 0.5)'
+                }}
+              >
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/20 to-transparent animate-pulse rounded-full" />
+              </div>
+            )}
           </div>
         </div>
 
         {/* Loading Text */}
-        <div className="text-center mt-8">
-          <p className="text-white/80 text-lg animate-pulse">
-            Loading EcoMetrics Dashboard...
-          </p>
+        <div className="text-center mt-12">
+          <div className="relative">
+            <p className="text-white/90 text-xl md:text-2xl font-light animate-pulse">
+              Loading EcoMetrics Dashboard
+            </p>
+            <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-24 h-0.5 bg-gradient-to-r from-transparent via-emerald-400 to-transparent animate-pulse" />
+          </div>
+        </div>
+
+        {/* Progress indicator dots */}
+        <div className="flex justify-center mt-8 space-x-2">
+          {[...Array(3)].map((_, i) => (
+            <div
+              key={i}
+              className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                count > (i + 1) * 33 
+                  ? 'bg-emerald-400 scale-125' 
+                  : 'bg-emerald-800'
+              }`}
+              style={{ animationDelay: `${i * 200}ms` }}
+            />
+          ))}
         </div>
       </div>
     </div>
